@@ -60,6 +60,37 @@ export const trainSearchSchema = z
     path: ['to'],
   });
 
+export const createTrainSchema = z.object({
+  trainNumber: z
+    .string()
+    .min(1, 'Train number is required')
+    .min(3, 'Train number must be at least 3 characters')
+    .refine((val) => val.trim().length >= 3, {
+      message: 'Train number must be at least 3 characters',
+    }),
+  totalSeats: z
+    .number()
+    .int('Total seats must be an integer')
+    .min(1, 'Total seats must be at least 1'),
+});
+
+export const createStopSchema = z.object({
+  stationName: z.string().min(1, 'Station name is required'),
+  arrivalDateTime: z.string().min(1, 'Arrival date and time is required'),
+  departureDateTime: z.string().min(1, 'Departure date and time is required'),
+  stopNumber: z.number().int('Stop number must be an integer').min(1, 'Stop number must be at least 1'),
+  priceFromStart: z.number().min(0, 'Price from start must be 0 or greater'),
+});
+
+export const createRouteSchema = z.object({
+  trainId: z.string().uuid('Invalid train ID'),
+  departureDateTime: z.string().min(1, 'Departure date and time is required'),
+  stops: z.array(createStopSchema).min(1, 'At least one stop is required'),
+});
+
 export type LoginFormData = z.infer<typeof loginSchema>;
 export type RegisterFormData = z.infer<typeof registerSchema>;
 export type TrainSearchFormData = z.infer<typeof trainSearchSchema>;
+export type CreateTrainFormData = z.infer<typeof createTrainSchema>;
+export type CreateStopFormData = z.infer<typeof createStopSchema>;
+export type CreateRouteFormData = z.infer<typeof createRouteSchema>;

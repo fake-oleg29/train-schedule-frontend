@@ -1,11 +1,4 @@
-export interface Train {
-  id: string;
-  trainNumber: string;
-  totalSeats: number;
-  createdAt: string;
-  updatedAt: string;
-  routes?: Route[];
-}
+import type { Train } from '../trains/trainTypes';
 export interface Route {
   id: string;
   trainId: string;
