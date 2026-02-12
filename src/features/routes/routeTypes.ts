@@ -9,10 +9,12 @@ export interface Route {
   stops?: Stop[];
   ticketPrice: number;
   startStation: {
+    id: string;
     name: string;
     departureDateTime: string;
   };
   endStation: {
+    id: string;
     name: string;
     arrivalDateTime: string;
   };

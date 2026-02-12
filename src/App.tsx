@@ -1,4 +1,7 @@
+import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useAppDispatch, useAppSelector } from './app/hooks';
+import { fetchCurrentUser } from './store/slices/authSlice';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
@@ -11,6 +14,15 @@ import AdminRoutesPage from './pages/admin/AdminRoutesPage';
 import MyTicketsPage from './pages/MyTicketsPage';
 
 function App() {
+  const dispatch = useAppDispatch();
+  const { token, user } = useAppSelector((state) => state.auth);
+
+  useEffect(() => {
+    if (token && !user) {
+      dispatch(fetchCurrentUser());
+    }
+  }, [dispatch, token, user]);
+
   return (
     <BrowserRouter>
       <Routes>

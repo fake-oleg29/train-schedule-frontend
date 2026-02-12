@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { trainSearchSchema, type TrainSearchFormData } from '../../utils/validation';
+import { Button } from '../ui/Button';
 
 interface TrainSearchFormProps {
   onSubmit?: (data: TrainSearchFormData) => void;
@@ -53,7 +54,7 @@ const TrainSearchForm = ({ onSubmit }: TrainSearchFormProps) => {
 
   return (
     <div className="w-full max-w-4xl mx-auto">
-      <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-md p-6 space-y-4">
+      <form onSubmit={handleSubmit} className="bg-white border border-gray-300 p-6 space-y-4">
         <h2 className="text-2xl font-semibold text-gray-900 mb-4">Search Trains</h2>
         
         {error && (
@@ -139,13 +140,13 @@ const TrainSearchForm = ({ onSubmit }: TrainSearchFormProps) => {
           </div>
         </div>
 
-        <button
+        <Button
           type="submit"
           disabled={isLoading}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full"
         >
-          {isLoading ? 'Searching...' : 'Search Trains'}
-        </button>
+          {isLoading ? 'Loading...' : 'Search Trains'}
+        </Button>
       </form>
     </div>
   );

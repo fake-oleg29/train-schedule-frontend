@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { createRouteSchema, type CreateRouteFormData, type CreateStopFormData } from '../../utils/validation';
 import type { Train } from '../../features/trains/trainTypes';
+import { Button } from '../ui/Button';
 
 interface RouteFormProps {
   trains: Train[];
@@ -18,6 +19,13 @@ const RouteForm = ({ trains, onSubmit, onCancel, isLoading = false }: RouteFormP
       arrivalDateTime: '',
       departureDateTime: '',
       stopNumber: 1,
+      priceFromStart: 0,
+    },
+    {
+      stationName: '',
+      arrivalDateTime: '',
+      departureDateTime: '',
+      stopNumber: 2,
       priceFromStart: 0,
     },
   ]);
@@ -41,7 +49,7 @@ const RouteForm = ({ trains, onSubmit, onCancel, isLoading = false }: RouteFormP
   };
 
   const removeStop = (index: number) => {
-    if (stops.length > 1) {
+    if (stops.length > 2) {
       const newStops = stops.filter((_, i) => i !== index);
       setStops(newStops.map((stop, i) => ({ ...stop, stopNumber: i + 1 })));
     }
@@ -113,6 +121,13 @@ const RouteForm = ({ trains, onSubmit, onCancel, isLoading = false }: RouteFormP
           stopNumber: 1,
           priceFromStart: 0,
         },
+        {
+          stationName: '',
+          arrivalDateTime: '',
+          departureDateTime: '',
+          stopNumber: 2,
+          priceFromStart: 0,
+        },
       ]);
     } catch (err) {
       console.error('Form submission error:', err);
@@ -158,9 +173,21 @@ const RouteForm = ({ trains, onSubmit, onCancel, isLoading = false }: RouteFormP
           type="datetime-local"
           value={departureDateTime}
           onChange={(e) => {
-            setDepartureDateTime(e.target.value);
+            const newDateTime = e.target.value;
+            setDepartureDateTime(newDateTime);
             if (errors.departureDateTime)
               setErrors((prev) => ({ ...prev, departureDateTime: undefined }));
+            
+            if (newDateTime && stops.length > 0) {
+              const newStops = [...stops];
+              newStops[0] = {
+                ...newStops[0],
+                arrivalDateTime: newDateTime,
+                departureDateTime: newDateTime,
+                priceFromStart: 0,
+              };
+              setStops(newStops);
+            }
           }}
           className={`w-full px-4 py-2 rounded-lg border ${
             errors.departureDateTime
@@ -177,14 +204,15 @@ const RouteForm = ({ trains, onSubmit, onCancel, isLoading = false }: RouteFormP
       <div>
         <div className="flex justify-between items-center mb-3">
           <label className="block text-sm font-medium text-gray-700">Stops</label>
-          <button
+          <Button
             type="button"
+            variant="text"
             onClick={addStop}
             disabled={isLoading}
-            className="text-blue-600 hover:text-blue-800 font-medium text-sm flex items-center gap-1"
+            className="text-blue-600 text-sm px-2 py-1"
           >
             <span>+</span> Add Stop
-          </button>
+          </Button>
         </div>
 
         <div className="space-y-4">
@@ -192,15 +220,16 @@ const RouteForm = ({ trains, onSubmit, onCancel, isLoading = false }: RouteFormP
             <div key={index} className="border border-gray-200 rounded-lg p-4 space-y-3">
               <div className="flex justify-between items-center">
                 <span className="text-sm font-medium text-gray-700">Stop #{stop.stopNumber}</span>
-                {stops.length > 1 && (
-                  <button
+                {stops.length > 2 && (
+                  <Button
                     type="button"
+                    variant="text"
                     onClick={() => removeStop(index)}
                     disabled={isLoading}
-                    className="text-red-600 hover:text-red-800 text-sm"
+                    className="text-red-600 text-sm px-2 py-1"
                   >
                     Remove
-                  </button>
+                  </Button>
                 )}
               </div>
 
@@ -231,7 +260,18 @@ const RouteForm = ({ trains, onSubmit, onCancel, isLoading = false }: RouteFormP
                   <input
                     type="datetime-local"
                     value={stop.arrivalDateTime}
-                    onChange={(e) => updateStop(index, 'arrivalDateTime', e.target.value)}
+                    onChange={(e) => {
+                      const newArrivalDateTime = e.target.value;
+                      if (index === 0) {
+                        // Для першої зупинки перевіряємо, чи час прибуття не більше часу відправлення
+                        const departureTime = stop.departureDateTime;
+                        if (departureTime && newArrivalDateTime > departureTime) {
+                          return; // Не дозволяємо змінити, якщо час прибуття більше часу відправлення
+                        }
+                      }
+                      updateStop(index, 'arrivalDateTime', newArrivalDateTime);
+                    }}
+                    max={index === 0 ? stop.departureDateTime : undefined}
                     className={`w-full px-3 py-2 rounded border text-sm ${
                       errors.stops?.[index]?.arrivalDateTime
                         ? 'border-red-500'
@@ -259,7 +299,7 @@ const RouteForm = ({ trains, onSubmit, onCancel, isLoading = false }: RouteFormP
                         ? 'border-red-500'
                         : 'border-gray-300 focus:ring-blue-500'
                     } focus:ring-1 focus:outline-none`}
-                    disabled={isLoading}
+                    disabled={isLoading || index === 0}
                   />
                   {errors.stops?.[index]?.departureDateTime && (
                     <p className="text-red-500 text-xs mt-1">
@@ -299,7 +339,7 @@ const RouteForm = ({ trains, onSubmit, onCancel, isLoading = false }: RouteFormP
                     type="number"
                     min="0"
                     step="0.01"
-                    value={stop.priceFromStart}
+                    value={index === 0 ? 0 : stop.priceFromStart}
                     onChange={(e) =>
                       updateStop(index, 'priceFromStart', parseFloat(e.target.value) || 0)
                     }
@@ -308,7 +348,7 @@ const RouteForm = ({ trains, onSubmit, onCancel, isLoading = false }: RouteFormP
                         ? 'border-red-500'
                         : 'border-gray-300 focus:ring-blue-500'
                     } focus:ring-1 focus:outline-none`}
-                    disabled={isLoading}
+                    disabled={isLoading || index === 0}
                   />
                   {errors.stops?.[index]?.priceFromStart && (
                     <p className="text-red-500 text-xs mt-1">
@@ -323,21 +363,22 @@ const RouteForm = ({ trains, onSubmit, onCancel, isLoading = false }: RouteFormP
       </div>
 
       <div className="flex gap-3 pt-2">
-        <button
+        <Button
           type="submit"
           disabled={isLoading}
-          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1"
         >
-          {isLoading ? 'Creating...' : 'Create Route'}
-        </button>
-        <button
+          {isLoading ? 'Loading...' : 'Create Route'}
+        </Button>
+        <Button
           type="button"
+          variant="secondary"
           onClick={onCancel}
           disabled={isLoading}
-          className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1"
         >
           Cancel
-        </button>
+        </Button>
       </div>
     </form>
   );

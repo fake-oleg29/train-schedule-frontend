@@ -1,11 +1,20 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { authAPI } from '../../features/auth/authAPI';
-import type { LoginCredentials, RegisterCredentials, AuthState, AuthResponse } from '../../features/auth/authTypes';
+import type { LoginCredentials, RegisterCredentials, AuthState, AuthResponse, User } from '../../features/auth/authTypes';
 import type { AxiosError } from 'axios';
 
+const getUserFromStorage = (): User | null => {
+  try {
+    const userStr = localStorage.getItem('user');
+    return userStr ? JSON.parse(userStr) : null;
+  } catch {
+    return null;
+  }
+};
+
 const initialState: AuthState = {
-  user: null,
+  user: getUserFromStorage(),
   token: localStorage.getItem('token'),
   isLoading: false,
   error: null,
@@ -19,6 +28,7 @@ export const login = createAsyncThunk<
   try {
     const response = await authAPI.login(credentials);
     localStorage.setItem('token', response.token);
+    localStorage.setItem('user', JSON.stringify(response.user));
     return response;
   } catch (error) {
     const axiosError = error as AxiosError<{ message?: string }>;
@@ -36,6 +46,7 @@ export const register = createAsyncThunk<
   try {
     const response = await authAPI.register(credentials);
     localStorage.setItem('token', response.token);
+    localStorage.setItem('user', JSON.stringify(response.user));
     return response;
   } catch (error) {
     const axiosError = error as AxiosError<{ message?: string }>;
@@ -45,14 +56,34 @@ export const register = createAsyncThunk<
   }
 });
 
+export const fetchCurrentUser = createAsyncThunk<
+  User,
+  void,
+  { rejectValue: string }
+>('auth/fetchCurrentUser', async (_, { rejectWithValue }) => {
+  try {
+    const user = await authAPI.getCurrentUser();
+    localStorage.setItem('user', JSON.stringify(user));
+    return user;
+  } catch (error) {
+    const axiosError = error as AxiosError<{ message?: string }>;
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    return rejectWithValue(
+      axiosError.response?.data?.message || 'Failed to fetch user'
+    );
+  }
+});
+
 export const logout = createAsyncThunk<void, void, { rejectValue: string }>(
   'auth/logout',
   async (_, { rejectWithValue }) => {
     try {
-      await authAPI.logout();
       localStorage.removeItem('token');
+      localStorage.removeItem('user');
     } catch (error) {
       localStorage.removeItem('token');
+      localStorage.removeItem('user');
       const axiosError = error as AxiosError<{ message?: string }>;
       return rejectWithValue(
         axiosError.response?.data?.message || 'Logout error'
@@ -73,6 +104,7 @@ const authSlice = createSlice({
       state.token = null;
       state.error = null;
       localStorage.removeItem('token');
+      localStorage.removeItem('user');
     },
   },
   extraReducers: (builder) => {
@@ -123,6 +155,23 @@ const authSlice = createSlice({
         state.user = null;
         state.token = null;
         state.error = null;
+      });
+
+    builder
+      .addCase(fetchCurrentUser.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchCurrentUser.fulfilled, (state, action: PayloadAction<User>) => {
+        state.isLoading = false;
+        state.user = action.payload;
+        state.error = null;
+      })
+      .addCase(fetchCurrentUser.rejected, (state, action) => {
+        state.isLoading = false;
+        state.user = null;
+        state.token = null;
+        state.error = action.payload || 'Failed to fetch user';
       });
   },
 });

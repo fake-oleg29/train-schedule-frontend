@@ -85,10 +85,13 @@ const routeSlice = createSlice({
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(searchRoutes.fulfilled, (state, action: PayloadAction<Route[]>) => {
+      .addCase(searchRoutes.fulfilled, (state, action) => {
         state.isLoading = false;
         state.routes = action.payload;
         state.error = null;
+        if (action.meta.arg) {
+          state.lastSearch = action.meta.arg;
+        }
       })
       .addCase(searchRoutes.rejected, (state, action) => {
         state.isLoading = false;
@@ -103,6 +106,7 @@ const routeSlice = createSlice({
         state.isLoading = false;
         state.routes = action.payload;
         state.error = null;
+        state.lastSearch = null;
       })
       .addCase(fetchAllRoutes.rejected, (state, action) => {
         state.isLoading = false;

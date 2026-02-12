@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../app/hooks';
 import { login, clearError } from '../../store/slices/authSlice';
 import { loginSchema, type LoginFormData } from '../../utils/validation';
+import { Button } from '../../components/ui/Button';
 
 export const LoginForm = () => {
   const dispatch = useAppDispatch();
@@ -111,17 +112,17 @@ export const LoginForm = () => {
         )}
       </div>
 
-      <button
+      <Button
         type="submit"
         disabled={isLoading}
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full"
       >
-        {isLoading ? 'Signing in...' : 'Sign In'}
-      </button>
+        {isLoading ? 'Loading...' : 'Sign In'}
+      </Button>
 
       <p className="text-center text-sm text-gray-600">
         Don't have an account?{' '}
-        <Link to="/register" className="text-blue-600 hover:text-blue-700 font-medium">
+        <Link to="/register" className="text-blue-600 font-medium">
           Sign Up
         </Link>
       </p>

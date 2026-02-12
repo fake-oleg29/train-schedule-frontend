@@ -11,11 +11,7 @@ export const authAPI = {
     const response = await api.post<AuthResponse>('/auth/register', credentials);
     return response.data;
   },
-
-  logout: async (): Promise<void> => {
-    await api.post('/auth/logout');
-  },
-
+  
   getCurrentUser: async (): Promise<User> => {
     const response = await api.get<User>('/auth/me');
     return response.data;

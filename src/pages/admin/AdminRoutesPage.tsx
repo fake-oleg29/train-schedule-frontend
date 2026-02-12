@@ -5,6 +5,13 @@ import { fetchTrains } from '../../store/slices/trainSlice';
 import type { CreateRouteFormData } from '../../utils/validation';
 import RouteForm from '../../components/admin/RouteForm';
 import { Modal } from '../../components/ui/Modal';
+import { PageHeader } from '../../components/ui/PageHeader';
+import { ErrorAlert } from '../../components/ui/ErrorAlert';
+import { LoadingState } from '../../components/ui/LoadingState';
+import { EmptyState } from '../../components/ui/EmptyState';
+import { Table } from '../../components/ui/Table';
+import { formatDateTime } from '../../utils/dateFormat';
+import type { Route } from '../../features/routes/routeTypes';
 
 const AdminRoutesPage = () => {
   const dispatch = useAppDispatch();
@@ -24,6 +31,7 @@ const AdminRoutesPage = () => {
     try {
       await dispatch(createRoute(data)).unwrap();
       setShowForm(false);
+      dispatch(fetchAllRoutes());
     } catch (err) {
       console.error('Create error:', err);
       throw err;
@@ -34,7 +42,7 @@ const AdminRoutesPage = () => {
     setShowForm(false);
   };
 
-  const getRouteName = (route: typeof routes[0]) => {
+  const getRouteName = (route: Route) => {
     if (route.startStation && route.endStation) {
       return `${route.startStation.name} → ${route.endStation.name}`;
     }
@@ -47,17 +55,48 @@ const AdminRoutesPage = () => {
     return 'Unknown Route';
   };
 
+  const tableColumns = [
+    {
+      header: 'Route Name',
+      accessor: (route: Route) => getRouteName(route),
+    },
+    {
+      header: 'Departure Time',
+      accessor: (route: Route) =>
+        route.startStation?.departureDateTime
+          ? formatDateTime(route.startStation.departureDateTime)
+          : 'N/A',
+    },
+    {
+      header: 'Arrival Time',
+      accessor: (route: Route) =>
+        route.endStation?.arrivalDateTime
+          ? formatDateTime(route.endStation.arrivalDateTime)
+          : 'N/A',
+    },
+    {
+      header: 'Train Number',
+      accessor: (route: Route) => route.train?.trainNumber || 'N/A',
+    },
+    {
+      header: 'Total Seats',
+      accessor: (route: Route) => route.train?.totalSeats || 0,
+    },
+    {
+      header: 'Stops Count',
+      accessor: (route: Route) => route.stops?.length || 0,
+    },
+  ];
+
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-semibold text-gray-900">Routes Management</h2>
-        <button
-          onClick={() => setShowForm(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg transition"
-        >
-          + Add Route
-        </button>
-      </div>
+      <PageHeader
+        title="Routes Management"
+        actionButton={{
+          label: '+ Add Route',
+          onClick: () => setShowForm(true),
+        }}
+      />
 
       <Modal
         isOpen={showForm}
@@ -72,69 +111,18 @@ const AdminRoutesPage = () => {
         />
       </Modal>
 
-      {error && (
-        <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-          {error}
-        </div>
-      )}
+      {error && <ErrorAlert message={error} className="mb-4" />}
 
-      {isLoading && (
-        <div className="text-center py-8">
-          <p className="text-gray-600">Loading routes...</p>
-        </div>
-      )}
+      {isLoading && <LoadingState message="Loading routes..." />}
 
-      {!isLoading && routes.length === 0 && (
-        <div className="bg-gray-50 rounded-lg p-6 text-center">
-          <p className="text-gray-600">No routes found.</p>
-        </div>
-      )}
+      {!isLoading && routes.length === 0 && <EmptyState message="No routes found." />}
 
       {!isLoading && routes.length > 0 && (
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Route Name
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Train Number
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Total Seats
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Stops Count
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {routes.map((route) => (
-                <tr key={route.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{getRouteName(route)}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      {route.train?.trainNumber || 'N/A'}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-500">
-                      {route.train?.totalSeats || 0}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-500">
-                      {route.stops?.length || 0}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <Table
+          columns={tableColumns}
+          data={routes}
+          keyExtractor={(route) => route.id}
+        />
       )}
     </div>
   );

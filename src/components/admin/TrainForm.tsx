@@ -1,6 +1,7 @@
 import { useState, type FormEvent, useEffect } from 'react';
 import { createTrainSchema, type CreateTrainFormData } from '../../utils/validation';
 import type { Train } from '../../features/trains/trainTypes';
+import { Button } from '../ui/Button';
 
 interface TrainFormProps {
   train?: Train | null;
@@ -115,21 +116,22 @@ const TrainForm = ({ train, onSubmit, onCancel, isLoading = false }: TrainFormPr
       </div>
 
       <div className="flex gap-3 pt-2">
-        <button
+        <Button
           type="submit"
           disabled={isLoading}
-          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1"
         >
-          {isLoading ? 'Saving...' : train ? 'Update Train' : 'Create Train'}
-        </button>
-        <button
+          {isLoading ? 'Loading...' : train ? 'Update Train' : 'Create Train'}
+        </Button>
+        <Button
           type="button"
+          variant="secondary"
           onClick={onCancel}
           disabled={isLoading}
-          className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1"
         >
           Cancel
-        </button>
+        </Button>
       </div>
     </form>
   );
